@@ -1,0 +1,16 @@
+{
+  "description": "Expected deps-scanner findings for deps-basic. Decoys (express, lodash, vitest) must produce nothing.",
+  "findings": [
+    { "source": "deps", "ruleId": "deps/jsonwebtoken", "package": "jsonwebtoken", "severity": "high" },
+    { "source": "deps", "ruleId": "deps/node-rsa", "package": "node-rsa", "severity": "high" },
+    { "source": "deps", "ruleId": "deps/jsrsasign", "package": "jsrsasign", "severity": "high" },
+    { "source": "deps", "ruleId": "deps/elliptic", "package": "elliptic", "severity": "medium" },
+    { "source": "deps", "ruleId": "deps/@noble/curves", "package": "@noble/curves", "severity": "medium" },
+    { "source": "deps", "ruleId": "deps/tweetnacl", "package": "tweetnacl", "severity": "medium" },
+    { "source": "deps", "ruleId": "deps/jose", "package": "jose", "severity": "review" },
+    { "source": "deps", "ruleId": "deps/crypto-js", "package": "crypto-js", "severity": "review" },
+    { "source": "deps", "ruleId": "deps/ssh2", "package": "ssh2", "severity": "review" },
+    { "source": "deps", "ruleId": "deps/bcrypt", "package": "bcrypt", "severity": "safe" },
+    { "source": "deps", "ruleId": "deps/@noble/post-quantum", "package": "@noble/post-quantum", "severity": "safe" }
+  ]
+}
