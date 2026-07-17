@@ -1,0 +1,31 @@
+{
+  "name": "shorproof",
+  "version": "0.0.1",
+  "description": "Post-quantum readiness scanner for JavaScript/TypeScript — finds quantum-vulnerable cryptography in your project. Early preview.",
+  "bin": {
+    "shorproof": "bin/shorproof.js"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "post-quantum",
+    "pqc",
+    "security",
+    "cryptography",
+    "scanner",
+    "quantum-safe",
+    "ml-dsa",
+    "ml-kem",
+    "cbom",
+    "audit",
+    "shor"
+  ],
+  "author": "Usama Amjid",
+  "license": "MIT"
+}
