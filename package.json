@@ -2,16 +2,33 @@
   "name": "shorproof",
   "version": "0.0.1",
   "description": "Post-quantum readiness scanner for JavaScript/TypeScript — finds quantum-vulnerable cryptography in your project. Early preview.",
+  "type": "module",
   "bin": {
-    "shorproof": "bin/shorproof.js"
+    "shorproof": "dist/cli.js"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
   "files": [
-    "bin",
+    "dist",
     "README.md",
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "node src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "post-quantum",
@@ -23,9 +40,23 @@
     "ml-dsa",
     "ml-kem",
     "cbom",
+    "sarif",
     "audit",
     "shor"
   ],
   "author": "Usama Amjid",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.37.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.4"
+  }
 }
