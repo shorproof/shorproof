@@ -13,6 +13,12 @@ import type { DepRule } from '../types.ts';
  * a quantum-vulnerable algorithm — hence confidence is `medium` for vulnerable
  * entries (the AST scanner is what upgrades a hunch to a usage-confirmed
  * finding). Severities preserve v0.0.1 behaviour.
+ *
+ * CATEGORY at this level is a single coarse *inventory* tag: the package's most
+ * common quantum-relevant use, and where a library spans both encryption and
+ * signing we bias toward the encryption/`kem` axis because harvest-now-decrypt-
+ * later makes it the more dangerous one. Precise, per-call categories are
+ * carried by AST findings (M2+), not here.
  */
 export const DEP_RULES = [
   {
@@ -32,7 +38,7 @@ export const DEP_RULES = [
     package: 'node-rsa',
     title: 'node-rsa — RSA key generation/encryption/signing',
     severity: 'high',
-    category: 'signature',
+    category: 'kem',
     algorithm: 'RSA',
     confidence: 'medium',
     lifetimeSensitive: true,
