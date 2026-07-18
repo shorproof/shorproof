@@ -15,6 +15,7 @@ import type {
 import {
   NODE_CRYPTO_RULES,
   JSONWEBTOKEN_RULES,
+  JWT_MIDDLEWARE_RULES,
   JOSE_RULES,
   JOSE_SIGN_BUILDERS,
   JOSE_BUILDER_REVIEW,
@@ -154,7 +155,11 @@ function analyzeNodeCrypto(
 
 // --- JWT analyzer (jsonwebtoken) ----------------------------------------
 
-const JWT_RULES: readonly JwtCallRule[] = [...JSONWEBTOKEN_RULES, ...JOSE_RULES];
+const JWT_RULES: readonly JwtCallRule[] = [
+  ...JSONWEBTOKEN_RULES,
+  ...JWT_MIDDLEWARE_RULES,
+  ...JOSE_RULES,
+];
 
 function algParts(ruleIdPrefix: string, label: string, alg: string, outcome: AlgOutcome): FindingParts {
   return {
