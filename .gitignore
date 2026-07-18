@@ -1,6 +1,9 @@
 # Local-only competitive analysis — never publish or commit
 COMPETITORS.md
 
+# Local-only bootstrap doc: keep for milestone reference, don't commit
+KICKOFF-PROMPT.md
+
 # Build output
 dist/
 

@@ -1,6 +1,6 @@
 {
   "name": "shorproof",
-  "version": "0.0.1",
+  "version": "0.1.0-dev.0",
   "description": "Post-quantum readiness scanner for JavaScript/TypeScript — finds quantum-vulnerable cryptography in your project. Early preview.",
   "type": "module",
   "bin": {
