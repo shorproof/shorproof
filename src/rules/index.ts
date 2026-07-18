@@ -8,3 +8,4 @@ export { NODE_CRYPTO_RULES } from './node-crypto.ts';
 export { JSONWEBTOKEN_RULES } from './jsonwebtoken.ts';
 export { JOSE_RULES, JOSE_SIGN_BUILDERS, JOSE_BUILDER_REVIEW } from './jose.ts';
 export { JWA_ALGS } from './jwa.ts';
+export { WEBCRYPTO_METHODS, webcryptoOutcome, type WebCryptoKind } from './webcrypto.ts';

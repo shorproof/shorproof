@@ -18,6 +18,8 @@ import {
   JOSE_RULES,
   JOSE_SIGN_BUILDERS,
   JOSE_BUILDER_REVIEW,
+  WEBCRYPTO_METHODS,
+  webcryptoOutcome,
 } from '../rules/index.ts';
 import { JWA_ALGS } from '../rules/jwa.ts';
 import { walkFiles } from '../walk.ts';
@@ -337,6 +339,91 @@ function analyzeJoseBuilder(
   return [makeAstFinding(algParts('jose', 'jose signer', alg, outcome), file, path.node, source)];
 }
 
+// --- WebCrypto analyzer (crypto.subtle.*) -------------------------------
+
+const GLOBAL_HOSTS = new Set(['globalThis', 'self', 'window', 'global']);
+
+function isNodeWebcrypto(target: CallTarget | null): boolean {
+  return (
+    target !== null &&
+    (target.module === 'node:crypto' || target.module === 'crypto') &&
+    target.exportName === 'webcrypto'
+  );
+}
+
+/** Is `node` a WebCrypto-bearing crypto object (global crypto, globalThis.crypto, node:crypto.webcrypto)? */
+function isWebCryptoHost(node: t.Node, scope: Scope): boolean {
+  if (node.type === 'Identifier') {
+    // A free `crypto` is the WebCrypto global; a bound name may be node:crypto's webcrypto.
+    if (!scope.getBinding(node.name)) return node.name === 'crypto';
+    return isNodeWebcrypto(resolveCallee(scope, node));
+  }
+  if (node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier') {
+    if (
+      node.property.name === 'crypto' &&
+      node.object.type === 'Identifier' &&
+      GLOBAL_HOSTS.has(node.object.name) &&
+      !scope.getBinding(node.object.name)
+    ) {
+      return true; // globalThis.crypto / self.crypto / window.crypto
+    }
+    return isNodeWebcrypto(resolveCallee(scope, node)); // <ns>.webcrypto
+  }
+  return false;
+}
+
+/** The algorithm name from a WebCrypto algorithm arg: 'X', { name: 'X' }, or a const of either. */
+function webcryptoAlgName(scope: Scope, arg: t.Node | undefined): string | null {
+  if (!arg) return null;
+  const obj = resolveObject(scope, arg);
+  if (obj) {
+    const nameNode = objectProperty(obj, 'name');
+    return nameNode ? resolveString(scope, nameNode) : null;
+  }
+  return resolveString(scope, arg);
+}
+
+/**
+ * Detect `crypto.subtle.<method>(algorithm, …)`. The host must be a WebCrypto
+ * object (binding-checked, so a local `crypto` isn't it). Only Shor-relevant
+ * algorithms produce a finding; an unresolved algorithm stays quiet, because a
+ * WebCrypto alg is just as likely symmetric (AES/HMAC) — no false alarms.
+ */
+function analyzeWebCrypto(
+  path: NodePath<t.CallExpression>,
+  file: string,
+  source: string,
+): AstFinding[] {
+  const callee = path.node.callee;
+  if (callee.type !== 'MemberExpression' || callee.computed || callee.property.type !== 'Identifier') {
+    return [];
+  }
+  const rule = WEBCRYPTO_METHODS[callee.property.name];
+  if (!rule) return [];
+
+  const subtleExpr = callee.object;
+  if (
+    subtleExpr.type !== 'MemberExpression' ||
+    subtleExpr.computed ||
+    subtleExpr.property.type !== 'Identifier' ||
+    subtleExpr.property.name !== 'subtle'
+  ) {
+    return [];
+  }
+  if (!isWebCryptoHost(subtleExpr.object, path.scope)) return [];
+
+  const arg = path.node.arguments[rule.algArgIndex];
+  const algArg = arg && arg.type !== 'SpreadElement' && arg.type !== 'ArgumentPlaceholder' ? arg : undefined;
+  const algName = webcryptoAlgName(path.scope, algArg);
+  if (algName === null) return [];
+
+  const outcome = webcryptoOutcome(algName, rule.kind);
+  if (!outcome) return []; // AES / SHA / HMAC / PBKDF2 / HKDF — not Shor-relevant
+
+  const label = `crypto.subtle.${callee.property.name}`;
+  return [makeAstFinding(algParts('webcrypto', label, algName, outcome), file, path.node, source)];
+}
+
 // --- scanner ------------------------------------------------------------
 
 /**
@@ -350,8 +437,10 @@ export function scanSource(file: string, source: string): AstFinding[] {
   const findings: AstFinding[] = [];
   traverse(ast, {
     CallExpression(path: NodePath<t.CallExpression>) {
-      // jose builders are method calls on an instance, not resolved exports.
+      // jose builders and WebCrypto are method calls on an instance/host, not
+      // resolved module-export calls — analyze them directly.
       findings.push(...analyzeJoseBuilder(path, file, source));
+      findings.push(...analyzeWebCrypto(path, file, source));
 
       const target = resolveCallTarget(path);
       if (!target) return;

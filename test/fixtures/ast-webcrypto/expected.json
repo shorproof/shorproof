@@ -1,0 +1,15 @@
+{
+  "description": "WebCrypto crypto.subtle.* detection (a gap competitors don't cover). Host detection spans the global crypto, globalThis.crypto, and node:crypto webcrypto. Severity is operation-aware: RSA always high; EC keygen medium (generatekey.mjs) but confirmed usage high (usage.mjs). FP guards: a local crypto object, and symmetric/hash algs (AES/HMAC/SHA).",
+  "findings": [
+    { "source": "ast", "ruleId": "webcrypto/rsassa-pkcs1-v1_5", "severity": "high", "file": "generatekey.mjs" },
+    { "source": "ast", "ruleId": "webcrypto/ecdsa", "severity": "medium", "file": "generatekey.mjs" },
+
+    { "source": "ast", "ruleId": "webcrypto/ecdsa", "severity": "high", "file": "usage.mjs" },
+    { "source": "ast", "ruleId": "webcrypto/ecdh", "severity": "high", "file": "usage.mjs" },
+    { "source": "ast", "ruleId": "webcrypto/rsa-oaep", "severity": "high", "file": "usage.mjs" },
+
+    { "source": "ast", "ruleId": "webcrypto/rsa-pss", "severity": "high", "file": "node-webcrypto.cjs" },
+
+    { "source": "ast", "ruleId": "webcrypto/ed25519", "severity": "medium", "file": "globalthis.mjs" }
+  ]
+}
