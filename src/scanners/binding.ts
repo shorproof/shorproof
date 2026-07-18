@@ -1,4 +1,4 @@
-import type { Binding, NodePath } from '@babel/traverse';
+import type { Binding, NodePath, Scope } from '@babel/traverse';
 import type * as t from '@babel/types';
 
 /**
@@ -148,10 +148,18 @@ function resolveBindingName(binding: Binding, name: string, depth: number): Reso
  * (`ns.foo(...)`). Uses scope, so a local shadow is correctly not the module.
  */
 export function resolveCallTarget(path: NodePath<t.CallExpression>): CallTarget | null {
-  const { callee } = path.node;
+  return resolveCallee(path.scope, path.node.callee);
+}
 
+/**
+ * Resolve a call or construct callee to the module export it names, or null.
+ * Handles `foo(...)` / `new Foo(...)` (a named binding) and `ns.foo(...)` /
+ * `new ns.Foo(...)` (a member on a namespace binding). Shared by the call and
+ * the jose-builder analyzers.
+ */
+export function resolveCallee(scope: Scope, callee: t.Node): CallTarget | null {
   if (callee.type === 'Identifier') {
-    const resolved = resolveIdentifier(path, callee.name);
+    const resolved = resolveName(scope, callee.name);
     return resolved?.kind === 'named'
       ? { module: resolved.module, exportName: resolved.name }
       : null;
@@ -160,7 +168,7 @@ export function resolveCallTarget(path: NodePath<t.CallExpression>): CallTarget 
   if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
     const exportName = memberName(callee);
     if (exportName === null) return null;
-    const resolved = resolveIdentifier(path, callee.object.name);
+    const resolved = resolveName(scope, callee.object.name);
     return resolved?.kind === 'namespace'
       ? { module: resolved.module, exportName }
       : null;
@@ -181,7 +189,7 @@ function memberName(member: t.MemberExpression): string | null {
   return null;
 }
 
-function resolveIdentifier(path: NodePath<t.CallExpression>, name: string): ResolvedBinding | null {
-  const binding = path.scope.getBinding(name);
+function resolveName(scope: Scope, name: string): ResolvedBinding | null {
+  const binding = scope.getBinding(name);
   return binding ? classifyBinding(binding) : null;
 }

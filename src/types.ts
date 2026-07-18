@@ -133,17 +133,21 @@ export interface AlgOutcome {
 
 /**
  * How a JWT library call carries its algorithm. The AST scanner reads the
- * options object at `optionArgIndex`, extracts `optionKey` (an array when
- * `optionIsArray`), resolves the value(s) by best-effort constant propagation,
- * and looks each up in the shared JWA table. A confirmed call whose algorithm
- * can't be resolved yields a `review` finding, never a confident classical one.
+ * argument at `algArgIndex` — either the algorithm directly (jose
+ * `generateKeyPair('ES256')`) or, when `algOptionKey` is set, that key of an
+ * options object (jsonwebtoken `sign(…, { algorithm })`); an array when
+ * `algIsArray` (jsonwebtoken `verify(…, { algorithms: [] })`). Values are
+ * resolved by best-effort constant propagation and looked up in the shared JWA
+ * table. A confirmed call whose algorithm can't be resolved yields a `review`
+ * finding, never a confident classical one.
  */
 export interface JwtCallRule {
   readonly modules: readonly string[];
   readonly export: string;
-  readonly optionArgIndex: number;
-  readonly optionKey: string;
-  readonly optionIsArray: boolean;
+  readonly algArgIndex: number;
+  /** If set, the alg is `options[algArgIndex][algOptionKey]`; if omitted, the arg itself is the alg. */
+  readonly algOptionKey?: string;
+  readonly algIsArray: boolean;
   /** ruleId prefix (`<prefix>/<alg>`) and review-finding metadata. */
   readonly ruleIdPrefix: string;
   readonly reviewRuleId: string;
