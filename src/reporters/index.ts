@@ -3,8 +3,9 @@ export { renderText } from './text.ts';
 export type { TextReportOptions } from './text.ts';
 export { renderJson } from './json.ts';
 export { renderSarif } from './sarif.ts';
+export { renderCbom } from './cbom.ts';
 
-export const REPORT_FORMATS = ['text', 'json', 'sarif'] as const;
+export const REPORT_FORMATS = ['text', 'json', 'sarif', 'cbom'] as const;
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 /** Narrow an untrusted string to a supported report format. */

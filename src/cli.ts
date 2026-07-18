@@ -4,7 +4,7 @@ import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { scan } from './engine.ts';
 import type { ScanResult } from './types.ts';
-import { renderText, renderJson, renderSarif } from './reporters/index.ts';
+import { renderText, renderJson, renderSarif, renderCbom } from './reporters/index.ts';
 import { REPORT_FORMATS, isReportFormat, type ReportFormat } from './reporters/index.ts';
 import { VERSION } from './version.ts';
 
@@ -33,6 +33,8 @@ function render(result: ScanResult, format: ReportFormat, color: boolean): strin
       return `${renderJson(result)}\n`;
     case 'sarif':
       return `${renderSarif(result)}\n`;
+    case 'cbom':
+      return `${renderCbom(result)}\n`;
     case 'text':
       return renderText(result, { color });
   }
