@@ -3,7 +3,8 @@ import { parseArgs } from 'node:util';
 import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { scan } from './engine.ts';
-import { renderText, renderJson } from './reporters/index.ts';
+import type { ScanResult } from './types.ts';
+import { renderText, renderJson, renderSarif } from './reporters/index.ts';
 import { REPORT_FORMATS, isReportFormat, type ReportFormat } from './reporters/index.ts';
 import { VERSION } from './version.ts';
 
@@ -14,16 +15,28 @@ Usage:
   npx shorproof [dir] [options]
 
 Options:
-  --format <text|json>   output format (default: text)
-  --json                 shorthand for --format json
-  --strict               exit 1 if any critical/high finding exists
-  --no-color             disable colored output
-  --version, -v          print version
-  --help, -h             show this help
+  --format <text|json|sarif>  output format (default: text)
+  --json                      shorthand for --format json
+  --strict                    exit 1 if any critical/high finding exists
+  --no-color                  disable colored output
+  --version, -v               print version
+  --help, -h                  show this help
 
-This build scans dependency manifests (package.json). AST source scanning,
-CycloneDX CBOM and SARIF output are in development for v0.1.
+Scans dependency manifests, JS/TS source (AST), and key/cert artifacts
+(JWKS/PEM/X.509). SARIF 2.1.0 output feeds GitHub code scanning.
 `;
+
+/** Serialize a scan result in the requested format (text is the only colored one). */
+function render(result: ScanResult, format: ReportFormat, color: boolean): string {
+  switch (format) {
+    case 'json':
+      return `${renderJson(result)}\n`;
+    case 'sarif':
+      return `${renderSarif(result)}\n`;
+    case 'text':
+      return renderText(result, { color });
+  }
+}
 
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
@@ -87,8 +100,7 @@ const useColor =
 
 try {
   const result = await scan({ root });
-  const output = format === 'json' ? `${renderJson(result)}\n` : renderText(result, { color: useColor });
-  process.stdout.write(output);
+  process.stdout.write(render(result, format, useColor));
 
   // M1 exit-code policy (v0.0.1 parity): --strict fails on critical/high.
   // Full --fail-on threshold logic lands in M4.
