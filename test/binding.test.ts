@@ -77,4 +77,14 @@ describe('binding layer keeps the imported export name across renames', () => {
     const code = `const cs = require('node:crypto').createSign; cs('sha256');`;
     expect(targets(code)).toContainEqual({ module: 'node:crypto', exportName: 'createSign' });
   });
+
+  it('computed member access with a string literal resolves the export', () => {
+    const code = `const c = require('node:crypto'); c['generateKeyPairSync']('rsa');`;
+    expect(targets(code)).toContainEqual(GEN);
+  });
+
+  it('computed member access with a non-literal key is unresolvable', () => {
+    const code = `const c = require('node:crypto'); const k = 'generateKeyPairSync'; c[k]('rsa');`;
+    expect(targets(code)).toEqual([]);
+  });
 });

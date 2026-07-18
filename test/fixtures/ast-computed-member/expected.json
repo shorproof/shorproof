@@ -1,0 +1,6 @@
+{
+  "description": "Regression guard: c['generateKeyPairSync']('rsa') — computed member with a string-literal key — resolves like c.generateKeyPairSync(...).",
+  "findings": [
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "computed.cjs" }
+  ]
+}

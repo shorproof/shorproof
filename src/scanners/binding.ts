@@ -118,18 +118,27 @@ export function resolveCallTarget(path: NodePath<t.CallExpression>): CallTarget 
       : null;
   }
 
-  if (
-    callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.object.type === 'Identifier' &&
-    callee.property.type === 'Identifier'
-  ) {
+  if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
+    const exportName = memberName(callee);
+    if (exportName === null) return null;
     const resolved = resolveIdentifier(path, callee.object.name);
     return resolved?.kind === 'namespace'
-      ? { module: resolved.module, exportName: callee.property.name }
+      ? { module: resolved.module, exportName }
       : null;
   }
 
+  return null;
+}
+
+/**
+ * The export name behind a member access: `obj.foo` (dot) or `obj['foo']`
+ * (computed with a string literal). Computed access with a non-literal key
+ * (`obj[dynamic]`) is unresolvable and returns null.
+ */
+function memberName(member: t.MemberExpression): string | null {
+  const { property, computed } = member;
+  if (!computed && property.type === 'Identifier') return property.name;
+  if (computed && property.type === 'StringLiteral') return property.value;
   return null;
 }
 
