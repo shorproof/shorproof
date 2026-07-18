@@ -3,10 +3,11 @@ import type { Finding, Scanner, ScanResult, Severity, SeverityCounts } from './t
 import { SEVERITIES, SEVERITY_RANK } from './types.ts';
 import { depsScanner } from './scanners/deps.ts';
 import { astScanner } from './scanners/ast.ts';
+import { artifactsScanner } from './scanners/artifacts.ts';
 import { VERSION } from './version.ts';
 
-/** The scanners that run by default. Grows as M3+ scanners land. */
-export const DEFAULT_SCANNERS: readonly Scanner[] = [depsScanner, astScanner];
+/** The scanners that run by default. */
+export const DEFAULT_SCANNERS: readonly Scanner[] = [depsScanner, astScanner, artifactsScanner];
 
 export interface ScanOptions {
   /** Directory to scan. Resolved against cwd. */

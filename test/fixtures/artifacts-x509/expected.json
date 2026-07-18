@@ -1,0 +1,7 @@
+{
+  "description": "X.509 certificates. An RSA cert valid past ~2030 -> critical (elevated: it protects connections into the anticipated quantum window). An EC cert expiring before 2030 -> medium (EC-family base, not elevated).",
+  "findings": [
+    { "source": "artifact", "ruleId": "x509/rsa", "severity": "critical", "file": "rsa-long.crt" },
+    { "source": "artifact", "ruleId": "x509/ec", "severity": "medium", "file": "ec-short.pem" }
+  ]
+}
