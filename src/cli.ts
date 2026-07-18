@@ -4,7 +4,7 @@ import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { scan } from './engine.ts';
 import { renderText, renderJson } from './reporters/index.ts';
-import { REPORT_FORMATS, type ReportFormat } from './reporters/index.ts';
+import { REPORT_FORMATS, isReportFormat, type ReportFormat } from './reporters/index.ts';
 import { VERSION } from './version.ts';
 
 const HELP = `
@@ -21,8 +21,8 @@ Options:
   --version, -v          print version
   --help, -h             show this help
 
-v0.0.x scans dependency manifests (package.json). AST source scanning,
-CycloneDX CBOM and SARIF output land in v0.1.
+This build scans dependency manifests (package.json). AST source scanning,
+CycloneDX CBOM and SARIF output are in development for v0.1.
 `;
 
 function fail(message: string): never {
@@ -63,10 +63,11 @@ if (values.version) {
   process.exit(0);
 }
 
-const format: ReportFormat = values.json ? 'json' : ((values.format ?? 'text') as ReportFormat);
-if (!REPORT_FORMATS.includes(format)) {
-  fail(`shorproof: unknown --format '${format}' (expected: ${REPORT_FORMATS.join(', ')})`);
+const requestedFormat = values.json ? 'json' : (values.format ?? 'text');
+if (!isReportFormat(requestedFormat)) {
+  fail(`shorproof: unknown --format '${requestedFormat}' (expected: ${REPORT_FORMATS.join(', ')})`);
 }
+const format: ReportFormat = requestedFormat;
 
 const dir = positionals[0] ?? '.';
 const root = resolve(process.cwd(), dir);
