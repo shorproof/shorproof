@@ -95,7 +95,7 @@ function toFinding(rule: AstRule, file: string, call: t.CallExpression, source: 
  * binding layer + rule matching on a snippet without touching the filesystem.
  */
 export function scanSource(file: string, source: string): AstFinding[] {
-  const ast = parseSource(source);
+  const ast = parseSource(source, file);
   if (!ast) return [];
 
   const findings: AstFinding[] = [];

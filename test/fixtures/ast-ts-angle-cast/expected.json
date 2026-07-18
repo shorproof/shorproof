@@ -1,0 +1,6 @@
+{
+  "description": "Regression guard: a .ts file using a legacy angle-bracket cast (<number>input) must still parse (plugins ['typescript'], no jsx) so its vulnerable generateKeyPairSync('rsa') is detected.",
+  "findings": [
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "angle-cast.ts" }
+  ]
+}
