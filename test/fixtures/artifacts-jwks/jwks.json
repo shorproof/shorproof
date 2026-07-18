@@ -1,0 +1,32 @@
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "n": "knBhJr3F3ZdH5iIyKyklxjzqJKpN7hrmsFPrGLrs1kLYkcSnrO2lQ2KPYV-8jh1NpeCUMvi8_k9_8_KKGLmpUGbV68LjSCXs1D5cecAv9DVFV7OBP7NeC5ST1JQWD0l4QDHNvVcRahUpFAWrPTVHXXAYg-GpmU8w1jqn69gJeVVFlYaWBhU_E5zP2DoSYqIgMh8-hZrdB7bAxRKUmkDJm9VzmcZUfDu20ahjREZabyW1YF6EIt8aJ5_MG0G7T5R-vy7l5tLyCuPpkVGwzV8GelYEFzWNMW-p5MnAqY0E5WFDCWuP_VKB9r1wsRh_EatczkEHW9I1TRvJvVrN7t7ROQ",
+      "e": "AQAB",
+      "kid": "rsa-1",
+      "use": "sig",
+      "alg": "RS256"
+    },
+    {
+      "kty": "EC",
+      "x": "0XLI0vDdnneTdMVnQ1S6vVPZy7P0L_Su8GoBVJoYSZs",
+      "y": "kqRf0y0cnogk75NJ1xoVP4pbU9w6Ed2CVtDm3IQghBc",
+      "crv": "P-256",
+      "kid": "ec-1",
+      "alg": "ES256"
+    },
+    {
+      "kty": "oct",
+      "k": "c2VjcmV0LWtleS1tYXRlcmlhbA",
+      "kid": "hmac-1",
+      "alg": "HS256"
+    },
+    {
+      "kty": "AKP",
+      "alg": "ML-DSA-65",
+      "pub": "m9_bogusbase64url_publickey",
+      "kid": "pq-1"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{ "keys": [ { "kty": "oct", "k": "AAAA", "kid": "s1", "alg": "HS256" } ] }

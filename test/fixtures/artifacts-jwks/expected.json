@@ -1,0 +1,8 @@
+{
+  "description": "A JWKS with mixed key types: RSA (critical — encryption-capable, deployed long-lived key infra), EC P-256 (high — Shor-breakable auth infra, soft lifetime clock), a symmetric oct key (skipped — not Shor-breakable), and a post-quantum AKP/ML-DSA key (safe — RFC 9964 positive detection).",
+  "findings": [
+    { "source": "artifact", "ruleId": "jwks/rsa", "severity": "critical", "file": "jwks.json" },
+    { "source": "artifact", "ruleId": "jwks/ec", "severity": "high", "file": "jwks.json" },
+    { "source": "artifact", "ruleId": "jwks/akp", "severity": "safe", "file": "jwks.json" }
+  ]
+}

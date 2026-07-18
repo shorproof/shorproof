@@ -1,0 +1,10 @@
+{
+  "description": "PEM key material. RSA private key -> critical (long-lived secret, encryption-capable HNDL); RSA public key -> high; EC and X25519 private keys -> high (deployed secret, EC-family soft clock); an encrypted private key -> review (algorithm can't be confirmed without the passphrase).",
+  "findings": [
+    { "source": "artifact", "ruleId": "pem-key/rsa", "severity": "critical", "file": "rsa-private.pem" },
+    { "source": "artifact", "ruleId": "pem-pub/rsa", "severity": "high", "file": "rsa-public.pem" },
+    { "source": "artifact", "ruleId": "pem-key/ec", "severity": "high", "file": "ec-private.pem" },
+    { "source": "artifact", "ruleId": "pem-key/x25519", "severity": "high", "file": "x25519-private.pem" },
+    { "source": "artifact", "ruleId": "pem-enc/unknown", "severity": "review", "file": "encrypted.pem" }
+  ]
+}

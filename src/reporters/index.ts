@@ -1,9 +1,11 @@
-/** Reporter registry. Text is the default; more reporters land in M4. */
+/** Reporter registry. Text is the default; JSON, SARIF and CBOM are machine formats. */
 export { renderText } from './text.ts';
 export type { TextReportOptions } from './text.ts';
 export { renderJson } from './json.ts';
+export { renderSarif } from './sarif.ts';
+export { renderCbom } from './cbom.ts';
 
-export const REPORT_FORMATS = ['text', 'json'] as const;
+export const REPORT_FORMATS = ['text', 'json', 'sarif', 'cbom'] as const;
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 /** Narrow an untrusted string to a supported report format. */

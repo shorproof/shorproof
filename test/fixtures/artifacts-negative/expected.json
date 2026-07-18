@@ -1,0 +1,4 @@
+{
+  "description": "False-positive suite for artifacts. None of these must produce a finding: a plain JSON config with no key material; prose that merely mentions 'kty' inside a string value (the parse gate keys on the \"kty\" member, not the word); a JWKS holding only a symmetric oct key (not Shor-breakable); and DH *parameters* (group parameters, not a key).",
+  "findings": []
+}

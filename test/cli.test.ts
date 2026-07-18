@@ -19,6 +19,7 @@ const CLI = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
 const TSC = fileURLToPath(new URL('../node_modules/typescript/lib/tsc.js', import.meta.url));
 const DEPS_BASIC = fileURLToPath(new URL('./fixtures/deps-basic', import.meta.url));
 const DEPS_CLEAN = fileURLToPath(new URL('./fixtures/deps-clean', import.meta.url));
+const ARTIFACTS_X509 = fileURLToPath(new URL('./fixtures/artifacts-x509', import.meta.url));
 
 interface CliRun {
   status: number;
@@ -56,6 +57,26 @@ describe('CLI exit codes', () => {
 
   it('exits 0 with --strict when nothing critical/high is found', () => {
     expect(runCli([DEPS_CLEAN, '--strict']).status).toBe(0);
+  });
+
+  it('exits 0 with --fail-on critical when only high findings exist', () => {
+    // deps-basic tops out at high — the critical threshold must not trip.
+    expect(runCli([DEPS_BASIC, '--fail-on', 'critical']).status).toBe(0);
+  });
+
+  it('exits 1 with --fail-on medium when a high finding exists', () => {
+    expect(runCli([DEPS_BASIC, '--fail-on', 'medium']).status).toBe(1);
+  });
+
+  it('exits 1 with --fail-on critical when a critical artifact finding exists', () => {
+    // The RSA cert valid past 2030 is critical — end-to-end through the artifacts scanner.
+    expect(runCli([ARTIFACTS_X509, '--fail-on', 'critical']).status).toBe(1);
+  });
+
+  it('exits 2 on an unknown --fail-on value', () => {
+    const run = runCli([DEPS_BASIC, '--fail-on', 'bogus']);
+    expect(run.status).toBe(2);
+    expect(run.stderr).toContain('unknown --fail-on');
   });
 
   it('exits 2 on a non-existent directory', () => {
