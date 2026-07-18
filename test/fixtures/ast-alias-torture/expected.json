@@ -1,0 +1,11 @@
+{
+  "description": "Alias torture: the SAME vulnerable node:crypto generateKeyPairSync('rsa') reached through all six binding styles. Detection must key off the resolved binding, never the local variable name. All six must be caught.",
+  "findings": [
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "default-import.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "renamed-import.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "destructured-require.cjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "namespace-import.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "require-whole.cjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "dynamic-import.mjs" }
+  ]
+}

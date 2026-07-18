@@ -1,0 +1,24 @@
+{
+  "description": "node:crypto positive coverage for M2. named-usage.mjs exercises direct-call bindings (named imports); namespace-usage.cjs exercises namespace-member bindings (whole-module require). The signer.sign()/verifier.verify() method calls in named-usage.mjs are NOT node:crypto and must not appear.",
+  "findings": [
+    { "source": "ast", "ruleId": "crypto/create-sign", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/create-verify", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/create-ecdh", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/public-encrypt", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/private-decrypt", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-ec", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-ed25519", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-x25519", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-dsa", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/create-diffie-hellman", "severity": "high", "file": "namespace-usage.cjs" },
+    { "source": "ast", "ruleId": "crypto/create-diffie-hellman-group", "severity": "high", "file": "namespace-usage.cjs" },
+    { "source": "ast", "ruleId": "crypto/sign", "severity": "high", "file": "namespace-usage.cjs" },
+    { "source": "ast", "ruleId": "crypto/verify", "severity": "high", "file": "namespace-usage.cjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "namespace-usage.cjs" },
+
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa-pss", "severity": "high", "file": "keygen-types.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-ed448", "severity": "high", "file": "keygen-types.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-x448", "severity": "high", "file": "keygen-types.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair", "severity": "review", "file": "keygen-types.mjs" }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "description": "False-positive guard for the binding layer. Every `.generateKeyPairSync('rsa')` / `.sign(...)` here is on a LOCAL object (an object literal, a parameter, a block-scoped shadow), not node:crypto. A bare node:crypto import with no vulnerable usage is also not a finding. Correct output: nothing.",
+  "findings": []
+}

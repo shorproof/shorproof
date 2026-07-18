@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { scan } from '../src/engine.ts';
 import type { Finding } from '../src/types.ts';
@@ -11,16 +11,33 @@ interface ExpectedFinding {
   readonly source: string;
   readonly ruleId: string;
   readonly severity: string;
+  /** deps findings: the npm package name. */
   readonly package?: string;
+  /** ast/artifact findings: path relative to the fixture root, forward slashes. */
+  readonly file?: string;
 }
 
-/** A stable identity for a finding, so comparisons are order-independent. */
-function signature(f: Finding | ExpectedFinding): string {
+/** Normalize an OS path to forward slashes so expectations are cross-platform. */
+function toPosix(p: string): string {
+  return p.split(sep).join('/');
+}
+
+/**
+ * A stable identity for a finding, so comparisons are order-independent.
+ * - deps: rule + package (line-independent; a manifest has no meaningful line).
+ * - ast/artifact: rule + the file it was found in, relative to the fixture root.
+ *   Line is deliberately excluded so adding a comment to a fixture doesn't break
+ *   the expectation; fixtures keep each (ruleId, file) pair unique instead.
+ */
+function signature(f: Finding | ExpectedFinding, root: string): string {
   const base = `${f.source}|${f.ruleId}|${f.severity}`;
-  const pkg = 'package' in f ? f.package : undefined;
-  if (pkg) return `${base}|${pkg}`;
-  const loc = 'location' in f ? f.location : undefined;
-  return `${base}|${loc?.file ?? ''}:${loc?.line ?? ''}`;
+  if (f.source === 'deps') {
+    return `${base}|${f.package ?? ''}`;
+  }
+  if ('location' in f) {
+    return `${base}|${toPosix(relative(root, f.location.file))}`;
+  }
+  return `${base}|${f.file ?? ''}`;
 }
 
 function fixtureDirs(): string[] {
@@ -39,8 +56,8 @@ describe('fixture precision/recall', () => {
 
       const result = await scan({ root });
 
-      const produced = new Set(result.findings.map(signature));
-      const wanted = new Set(expected.findings.map(signature));
+      const produced = new Set(result.findings.map((f) => signature(f, root)));
+      const wanted = new Set(expected.findings.map((f) => signature(f, root)));
 
       // Recall: everything expected was found.
       const missing = [...wanted].filter((s) => !produced.has(s));
