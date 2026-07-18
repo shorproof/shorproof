@@ -56,34 +56,38 @@ export const NODE_CRYPTO_RULES = [
   },
 
   // --- Signatures: one-shot sign / verify ---------------------------------
-  // crypto.sign / crypto.verify only accept asymmetric keys — there is no
-  // symmetric one-shot here (that is createHmac) — so a resolved call is always
-  // a classical asymmetric signature, whichever key type is used.
+  // crypto.sign / crypto.verify accept only asymmetric keys, but on Node 24.7+
+  // that INCLUDES post-quantum ML-DSA (crypto.sign(null, data, mlDsaKey)). So
+  // the signing operation is confirmed while the algorithm is not — a `review`,
+  // not a confident classical finding. M3 resolves the key type to confirm, and
+  // only then would a classical key become `high`. (createSign/createVerify stay
+  // high: those streaming APIs are classical-only; ML-DSA runs only through the
+  // one-shot form.)
   {
     id: 'crypto/sign',
     title: 'crypto.sign — one-shot asymmetric signing',
     modules: MODULES,
     exports: ['sign'],
-    severity: 'high',
+    severity: 'review',
     category: 'signature',
-    algorithm: 'RSA/DSA/ECDSA/EdDSA',
-    confidence: 'high',
+    algorithm: 'RSA/DSA/ECDSA/EdDSA or ML-DSA',
+    confidence: 'low',
     lifetimeSensitive: false,
-    why: 'The one-shot crypto.sign only accepts asymmetric keys (RSA/DSA/ECDSA/EdDSA) — every one of them is broken by Shor’s algorithm.',
-    migration: 'Move signing to ML-DSA (FIPS 204), available in Node 24.7+ or via a PQC library.',
+    why: 'One-shot crypto.sign signs with an asymmetric key whose algorithm depends on the key — classical RSA/DSA/ECDSA/EdDSA (broken by Shor’s algorithm) or, on Node 24.7+, post-quantum ML-DSA. Confirm the key type.',
+    migration: 'If the key is RSA/DSA/ECDSA/EdDSA, move to ML-DSA (FIPS 204); if it is already ML-DSA, this is post-quantum.',
   },
   {
     id: 'crypto/verify',
     title: 'crypto.verify — one-shot asymmetric verification',
     modules: MODULES,
     exports: ['verify'],
-    severity: 'high',
+    severity: 'review',
     category: 'signature',
-    algorithm: 'RSA/DSA/ECDSA/EdDSA',
-    confidence: 'high',
+    algorithm: 'RSA/DSA/ECDSA/EdDSA or ML-DSA',
+    confidence: 'low',
     lifetimeSensitive: false,
-    why: 'The one-shot crypto.verify checks asymmetric signatures (RSA/DSA/ECDSA/EdDSA) — the underlying scheme is broken by Shor’s algorithm.',
-    migration: 'Verify ML-DSA (FIPS 204) signatures instead, via Node 24.7+ or a PQC library.',
+    why: 'One-shot crypto.verify checks an asymmetric signature whose algorithm depends on the key — classical RSA/DSA/ECDSA/EdDSA (broken by Shor’s algorithm) or, on Node 24.7+, post-quantum ML-DSA. Confirm the key type.',
+    migration: 'If the key is RSA/DSA/ECDSA/EdDSA, move to ML-DSA (FIPS 204); if it is already ML-DSA, this is post-quantum.',
   },
 
   // --- Key exchange -------------------------------------------------------
@@ -220,7 +224,7 @@ export const NODE_CRYPTO_RULES = [
     modules: MODULES,
     exports: KEYGEN_EXPORTS,
     firstArg: 'ed25519',
-    severity: 'high',
+    severity: 'medium',
     category: 'signature',
     algorithm: 'Ed25519',
     confidence: 'high',
@@ -234,7 +238,7 @@ export const NODE_CRYPTO_RULES = [
     modules: MODULES,
     exports: KEYGEN_EXPORTS,
     firstArg: 'ed448',
-    severity: 'high',
+    severity: 'medium',
     category: 'signature',
     algorithm: 'Ed448',
     confidence: 'high',
@@ -248,7 +252,7 @@ export const NODE_CRYPTO_RULES = [
     modules: MODULES,
     exports: KEYGEN_EXPORTS,
     firstArg: 'x25519',
-    severity: 'high',
+    severity: 'medium',
     category: 'key-exchange',
     algorithm: 'X25519',
     confidence: 'high',
@@ -262,7 +266,7 @@ export const NODE_CRYPTO_RULES = [
     modules: MODULES,
     exports: KEYGEN_EXPORTS,
     firstArg: 'x448',
-    severity: 'high',
+    severity: 'medium',
     category: 'key-exchange',
     algorithm: 'X448',
     confidence: 'high',
