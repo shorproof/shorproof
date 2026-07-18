@@ -216,8 +216,12 @@ function classifyCertificate(pem: string, file: string, line: number): ArtifactF
   const info = type ? KEY_TYPES[type] : undefined;
   if (!info) return null;
 
-  const validTo = cert.validToDate;
-  const pastHorizon = validTo.getTime() >= QUANTUM_HORIZON.getTime();
+  // `validToDate` (a Date) only exists on newer Node; parse the `validTo`
+  // string, which is available back to our Node 20.12 floor. If it can't be
+  // parsed we keep the base severity (no horizon elevation) rather than guess.
+  const parsed = new Date(cert.validTo);
+  const validTo = Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  const pastHorizon = validTo ? validTo.getTime() >= QUANTUM_HORIZON.getTime() : false;
 
   return makeFinding({
     info,
