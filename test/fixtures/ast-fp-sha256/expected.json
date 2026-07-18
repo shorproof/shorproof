@@ -1,0 +1,4 @@
+{
+  "description": "False-positive guard: createHash('sha256'), createHmac, and randomBytes from node:crypto are quantum-safe. None are in the vulnerable rule set. Correct output: nothing.",
+  "findings": []
+}

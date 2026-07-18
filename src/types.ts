@@ -88,6 +88,33 @@ export interface DepRule extends Rule {
   readonly package: string;
 }
 
+/**
+ * An AST source rule. Fires when a call expression's callee resolves — through
+ * the binding layer, regardless of local variable name — to one of `exports`
+ * imported from one of `modules`.
+ *
+ * Most rules fire on the call unconditionally (the API itself is the finding).
+ * A few APIs select their primitive via the first argument (Node's
+ * `generateKeyPair('rsa', …)`); those are expressed as sibling rules that share
+ * an export and differ by `firstArg`, plus one `firstArgFallback` rule that
+ * fires only when the argument can't be resolved to a known value. This keeps
+ * argument dispatch in the rule data, not the engine.
+ */
+export interface AstRule extends Rule {
+  /** Module specifiers the export may come from, e.g. ['crypto', 'node:crypto']. */
+  readonly modules: readonly string[];
+  /** Exported function name(s) this rule matches, e.g. ['generateKeyPair', 'generateKeyPairSync']. */
+  readonly exports: readonly string[];
+  /** If set, fire only when the call's first argument is exactly this string literal. */
+  readonly firstArg?: string;
+  /**
+   * Family fallback: fire only when the same export has `firstArg` siblings but
+   * the call's first argument couldn't be resolved to any of them (e.g. a
+   * computed key type). Lower confidence by nature — a review-level finding.
+   */
+  readonly firstArgFallback?: boolean;
+}
+
 // --- Findings ------------------------------------------------------------
 
 export interface Location {

@@ -1,0 +1,4 @@
+{
+  "description": "False-positive guard: 'RS256' appears only in a comment and as string data, never as a crypto call. AST-only detection must not fire on bare strings. Correct output: nothing.",
+  "findings": []
+}

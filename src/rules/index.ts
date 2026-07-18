@@ -4,3 +4,4 @@
  * file (or a new one) without touching detection code.
  */
 export { DEP_RULES } from './deps-packages.ts';
+export { NODE_CRYPTO_RULES } from './node-crypto.ts';
