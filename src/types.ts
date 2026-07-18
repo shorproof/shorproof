@@ -115,6 +115,43 @@ export interface AstRule extends Rule {
   readonly firstArgFallback?: boolean;
 }
 
+/**
+ * Outcome metadata for a specific JWA/COSE algorithm value (e.g. 'RS256',
+ * 'ML-DSA-65'), shared across JWT libraries so one algorithm knowledge base
+ * serves jsonwebtoken and jose alike. Post-quantum algs carry `severity: 'safe'`
+ * — positive detection ("already post-quantum ✓"), not silence.
+ */
+export interface AlgOutcome {
+  readonly severity: Severity;
+  readonly category: Category;
+  readonly algorithm: string;
+  readonly confidence: Confidence;
+  readonly lifetimeSensitive: boolean;
+  readonly why: string;
+  readonly migration: string;
+}
+
+/**
+ * How a JWT library call carries its algorithm. The AST scanner reads the
+ * options object at `optionArgIndex`, extracts `optionKey` (an array when
+ * `optionIsArray`), resolves the value(s) by best-effort constant propagation,
+ * and looks each up in the shared JWA table. A confirmed call whose algorithm
+ * can't be resolved yields a `review` finding, never a confident classical one.
+ */
+export interface JwtCallRule {
+  readonly modules: readonly string[];
+  readonly export: string;
+  readonly optionArgIndex: number;
+  readonly optionKey: string;
+  readonly optionIsArray: boolean;
+  /** ruleId prefix (`<prefix>/<alg>`) and review-finding metadata. */
+  readonly ruleIdPrefix: string;
+  readonly reviewRuleId: string;
+  readonly reviewTitle: string;
+  readonly reviewWhy: string;
+  readonly reviewMigration: string;
+}
+
 // --- Findings ------------------------------------------------------------
 
 export interface Location {

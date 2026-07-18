@@ -1,0 +1,16 @@
+{
+  "description": "jsonwebtoken usage-confirmed algorithm detection. RS/PS/ES families -> high, HS -> safe (positive detection), unresolved alg -> review. Constant propagation resolves alg via an options-object const and via an alg const. FP guards: sign() with no options, and a local object named jwt that isn't the library.",
+  "findings": [
+    { "source": "ast", "ruleId": "jsonwebtoken/rs256", "severity": "high", "file": "sign-algs.mjs" },
+    { "source": "ast", "ruleId": "jsonwebtoken/ps384", "severity": "high", "file": "sign-algs.mjs" },
+    { "source": "ast", "ruleId": "jsonwebtoken/es256", "severity": "high", "file": "sign-algs.mjs" },
+    { "source": "ast", "ruleId": "jsonwebtoken/hs256", "severity": "safe", "file": "sign-algs.mjs" },
+
+    { "source": "ast", "ruleId": "jsonwebtoken/es512", "severity": "high", "file": "verify-algs.cjs" },
+
+    { "source": "ast", "ruleId": "jsonwebtoken/rs512", "severity": "high", "file": "constprop.mjs" },
+    { "source": "ast", "ruleId": "jsonwebtoken/ps256", "severity": "high", "file": "constprop.mjs" },
+
+    { "source": "ast", "ruleId": "jsonwebtoken/review", "severity": "review", "file": "unresolved.mjs" }
+  ]
+}

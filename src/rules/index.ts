@@ -5,3 +5,5 @@
  */
 export { DEP_RULES } from './deps-packages.ts';
 export { NODE_CRYPTO_RULES } from './node-crypto.ts';
+export { JSONWEBTOKEN_RULES } from './jsonwebtoken.ts';
+export { JWA_ALGS } from './jwa.ts';

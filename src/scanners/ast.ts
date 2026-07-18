@@ -1,16 +1,78 @@
 import { readFileSync } from 'node:fs';
 import type { NodePath } from '@babel/traverse';
 import type * as t from '@babel/types';
-import type { AstFinding, AstRule, Scanner, ScanContext } from '../types.ts';
-import { NODE_CRYPTO_RULES } from '../rules/index.ts';
+import type {
+  AlgOutcome,
+  AstFinding,
+  AstRule,
+  Category,
+  Confidence,
+  JwtCallRule,
+  Scanner,
+  ScanContext,
+  Severity,
+} from '../types.ts';
+import { NODE_CRYPTO_RULES, JSONWEBTOKEN_RULES } from '../rules/index.ts';
+import { JWA_ALGS } from '../rules/jwa.ts';
 import { walkFiles } from '../walk.ts';
 import { parseSource, traverse } from '../babel.ts';
-import { resolveCallTarget } from './binding.ts';
+import { resolveCallTarget, type CallTarget } from './binding.ts';
+import { objectProperty, resolveObject, resolveString, resolveStringArray } from './constprop.ts';
 
 /** Source extensions the AST scanner parses. */
 const SOURCE_EXTENSIONS = ['.js', '.cjs', '.mjs', '.jsx', '.ts', '.cts', '.mts', '.tsx'] as const;
 
-/** All AST rules the scanner consumes. Grows as M3 adds JWT/WebCrypto groups. */
+/** Everything needed to build a finding, independent of which analyzer produced it. */
+interface FindingParts {
+  readonly ruleId: string;
+  readonly title: string;
+  readonly severity: Severity;
+  readonly category: Category;
+  readonly algorithm: string;
+  readonly confidence: Confidence;
+  readonly lifetimeSensitive: boolean;
+  readonly why: string;
+  readonly migration: string;
+}
+
+/** A one-line, whitespace-collapsed excerpt of the call, for the report. */
+function snippetOf(call: t.CallExpression, source: string): string {
+  const { start, end } = call;
+  if (typeof start !== 'number' || typeof end !== 'number') return '';
+  const raw = source.slice(start, end).replace(/\s+/g, ' ').trim();
+  return raw.length > 100 ? `${raw.slice(0, 99)}…` : raw;
+}
+
+function makeAstFinding(
+  parts: FindingParts,
+  file: string,
+  call: t.CallExpression,
+  source: string,
+): AstFinding {
+  const start = call.loc?.start;
+  return {
+    source: 'ast',
+    ruleId: parts.ruleId,
+    severity: parts.severity,
+    category: parts.category,
+    algorithm: parts.algorithm,
+    title: parts.title,
+    why: parts.why,
+    migration: parts.migration,
+    confidence: parts.confidence,
+    lifetimeSensitive: parts.lifetimeSensitive,
+    location: {
+      file,
+      line: start?.line,
+      // Babel columns are 0-based; report 1-based to match editors.
+      column: start ? start.column + 1 : undefined,
+    },
+    snippet: snippetOf(call, source),
+  };
+}
+
+// --- node:crypto analyzer -----------------------------------------------
+
 const AST_RULES: readonly AstRule[] = NODE_CRYPTO_RULES;
 
 /** The first argument of a call, if it is a plain string literal. */
@@ -20,12 +82,10 @@ function firstStringArg(call: t.CallExpression): string | null {
 }
 
 /**
- * The rules that fire for a resolved call. Unconditional rules (the API itself
- * is the finding) always fire. For a family whose rules discriminate on the
+ * The node:crypto rules that fire for a resolved call. Unconditional rules (the
+ * API itself is the finding) always fire. For a family that discriminates on the
  * first argument (generateKeyPair), the matching `firstArg` rule fires; if the
- * argument can't be resolved to any known value, the `firstArgFallback` rule
- * fires instead as a review-level finding. This dispatch is driven entirely by
- * the rule data — the engine stays generic.
+ * argument can't be resolved, the `firstArgFallback` rule fires as review.
  */
 function matchRules(module: string, exportName: string, call: t.CallExpression): AstRule[] {
   const family = AST_RULES.filter(
@@ -39,7 +99,7 @@ function matchRules(module: string, exportName: string, call: t.CallExpression):
   let conditionalHit = false;
 
   for (const rule of family) {
-    if (rule.firstArgFallback) continue; // considered only if nothing else matched
+    if (rule.firstArgFallback) continue;
     if (rule.firstArg === undefined) {
       matched.push(rule);
       continue;
@@ -59,36 +119,127 @@ function matchRules(module: string, exportName: string, call: t.CallExpression):
   return matched;
 }
 
-/** A one-line, whitespace-collapsed excerpt of the call, for the report. */
-function snippetOf(call: t.CallExpression, source: string): string {
-  const { start, end } = call;
-  if (typeof start !== 'number' || typeof end !== 'number') return '';
-  const raw = source.slice(start, end).replace(/\s+/g, ' ').trim();
-  return raw.length > 100 ? `${raw.slice(0, 99)}…` : raw;
-}
-
-function toFinding(rule: AstRule, file: string, call: t.CallExpression, source: string): AstFinding {
-  const start = call.loc?.start;
+function ruleParts(rule: AstRule): FindingParts {
   return {
-    source: 'ast',
     ruleId: rule.id,
+    title: rule.title,
     severity: rule.severity,
     category: rule.category,
     algorithm: rule.algorithm,
-    title: rule.title,
-    why: rule.why,
-    migration: rule.migration,
     confidence: rule.confidence,
     lifetimeSensitive: rule.lifetimeSensitive,
-    location: {
-      file,
-      line: start?.line,
-      // Babel columns are 0-based; report 1-based to match editors.
-      column: start ? start.column + 1 : undefined,
-    },
-    snippet: snippetOf(call, source),
+    why: rule.why,
+    migration: rule.migration,
   };
 }
+
+function analyzeNodeCrypto(
+  target: CallTarget,
+  path: NodePath<t.CallExpression>,
+  file: string,
+  source: string,
+): AstFinding[] {
+  return matchRules(target.module, target.exportName, path.node).map((rule) =>
+    makeAstFinding(ruleParts(rule), file, path.node, source),
+  );
+}
+
+// --- JWT analyzer (jsonwebtoken) ----------------------------------------
+
+const JWT_RULES: readonly JwtCallRule[] = JSONWEBTOKEN_RULES;
+
+function algParts(rule: JwtCallRule, alg: string, outcome: AlgOutcome): FindingParts {
+  return {
+    ruleId: `${rule.ruleIdPrefix}/${alg.toLowerCase()}`,
+    title: `${rule.ruleIdPrefix}.${rule.export} — ${alg}`,
+    severity: outcome.severity,
+    category: outcome.category,
+    algorithm: outcome.algorithm,
+    confidence: outcome.confidence,
+    lifetimeSensitive: outcome.lifetimeSensitive,
+    why: outcome.why,
+    migration: outcome.migration,
+  };
+}
+
+function reviewParts(rule: JwtCallRule): FindingParts {
+  return {
+    ruleId: rule.reviewRuleId,
+    title: rule.reviewTitle,
+    severity: 'review',
+    category: 'signature',
+    algorithm: 'unresolved',
+    confidence: 'low',
+    lifetimeSensitive: false,
+    why: rule.reviewWhy,
+    migration: rule.reviewMigration,
+  };
+}
+
+/** The options object of a JWT call, resolved through a const binding if needed. */
+function optionsObject(
+  path: NodePath<t.CallExpression>,
+  arg: t.Expression | t.SpreadElement | t.ArgumentPlaceholder,
+): t.ObjectExpression | null {
+  if (arg.type === 'ObjectExpression') return arg;
+  if (arg.type === 'Identifier') return resolveObject(path.scope, arg);
+  return null;
+}
+
+function analyzeJwt(
+  target: CallTarget,
+  path: NodePath<t.CallExpression>,
+  file: string,
+  source: string,
+): AstFinding[] {
+  const rule = JWT_RULES.find(
+    (r) => r.modules.includes(target.module) && r.export === target.exportName,
+  );
+  if (!rule) return [];
+
+  const arg = path.node.arguments[rule.optionArgIndex];
+  // No options arg → default alg is HS256 (safe); nothing confirmed. And a
+  // callback in the options slot is not options — stay quiet either way.
+  if (!arg || arg.type === 'FunctionExpression' || arg.type === 'ArrowFunctionExpression') return [];
+
+  const obj = optionsObject(path, arg);
+  if (!obj) return []; // unresolvable non-object (e.g. a callback var) — avoid a false positive
+
+  const algNode = objectProperty(obj, rule.optionKey);
+  if (!algNode) return []; // no algorithm key → default → nothing to confirm
+
+  const algValues = rule.optionIsArray
+    ? resolveStringArray(path.scope, algNode)
+    : [resolveString(path.scope, algNode)];
+
+  const findings: AstFinding[] = [];
+  const seen = new Set<string>();
+  let resolvedAny = false;
+  let unresolvedAny = false;
+
+  for (const alg of algValues ?? [null]) {
+    if (alg === null) {
+      unresolvedAny = true;
+      continue;
+    }
+    const outcome = JWA_ALGS[alg];
+    if (!outcome) {
+      unresolvedAny = true;
+      continue;
+    }
+    resolvedAny = true;
+    if (seen.has(alg)) continue;
+    seen.add(alg);
+    findings.push(makeAstFinding(algParts(rule, alg, outcome), file, path.node, source));
+  }
+
+  if (unresolvedAny && !resolvedAny) {
+    findings.push(makeAstFinding(reviewParts(rule), file, path.node, source));
+  }
+  return findings;
+}
+
+// --- scanner ------------------------------------------------------------
 
 /**
  * Scan one source string. Exposed (beyond the Scanner) so tests can exercise the
@@ -103,9 +254,8 @@ export function scanSource(file: string, source: string): AstFinding[] {
     CallExpression(path: NodePath<t.CallExpression>) {
       const target = resolveCallTarget(path);
       if (!target) return;
-      for (const rule of matchRules(target.module, target.exportName, path.node)) {
-        findings.push(toFinding(rule, file, path.node, source));
-      }
+      findings.push(...analyzeNodeCrypto(target, path, file, source));
+      findings.push(...analyzeJwt(target, path, file, source));
     },
   });
   return findings;
