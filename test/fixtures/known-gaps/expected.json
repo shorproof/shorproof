@@ -1,4 +1,0 @@
-{
-  "description": "CANARY — documented expected-MISSES, not clean code. Both files contain a vulnerable node:crypto RSA keygen that the M2 binding layer does NOT yet catch: method extraction (const g = c.generateKeyPairSync) and namespace aliasing (const c2 = c). Both need recursive binding resolution, scoped to M3. When M3 lands, these WILL be detected and this test will fail with 'unexpected findings' — that failure is the signal to flip these expectations to the real findings.",
-  "findings": []
-}

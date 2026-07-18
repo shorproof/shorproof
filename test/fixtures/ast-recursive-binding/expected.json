@@ -1,0 +1,7 @@
+{
+  "description": "Recursive binding resolution (M3): method extraction (const g = c.foo) and namespace aliasing (const c2 = c) now resolve to the underlying node:crypto export. These were the M2 known-gaps canaries — flipped from expected-miss to real findings.",
+  "findings": [
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "method-extraction.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-rsa", "severity": "high", "file": "namespace-aliasing.mjs" }
+  ]
+}
