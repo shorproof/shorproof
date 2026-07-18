@@ -1,0 +1,4 @@
+{
+  "description": "No crypto-relevant dependencies — must produce zero findings (false-positive guard).",
+  "findings": []
+}
