@@ -210,7 +210,7 @@ export const NODE_CRYPTO_RULES = [
     modules: MODULES,
     exports: KEYGEN_EXPORTS,
     firstArg: 'ec',
-    severity: 'high',
+    severity: 'medium',
     category: 'signature',
     algorithm: 'ECDSA/ECDH',
     confidence: 'high',

@@ -6,7 +6,7 @@
     { "source": "ast", "ruleId": "crypto/create-ecdh", "severity": "high", "file": "named-usage.mjs" },
     { "source": "ast", "ruleId": "crypto/public-encrypt", "severity": "high", "file": "named-usage.mjs" },
     { "source": "ast", "ruleId": "crypto/private-decrypt", "severity": "high", "file": "named-usage.mjs" },
-    { "source": "ast", "ruleId": "crypto/generate-keypair-ec", "severity": "high", "file": "named-usage.mjs" },
+    { "source": "ast", "ruleId": "crypto/generate-keypair-ec", "severity": "medium", "file": "named-usage.mjs" },
     { "source": "ast", "ruleId": "crypto/generate-keypair-ed25519", "severity": "medium", "file": "named-usage.mjs" },
     { "source": "ast", "ruleId": "crypto/generate-keypair-x25519", "severity": "medium", "file": "named-usage.mjs" },
     { "source": "ast", "ruleId": "crypto/generate-keypair-dsa", "severity": "high", "file": "named-usage.mjs" },
