@@ -1,0 +1,17 @@
+{
+  "description": "jose: generateKeyPair(alg) and the SignJWT builder. Classical algs (ES/EdDSA/RS) -> high; ML-DSA-65 -> safe (positive detection). only-mldsa.mjs is the philosophy proof: a fully post-quantum jose service yields a safe finding and NOT one vulnerable finding. FP guards: unresolved alg -> review; a local SignJWT class that isn't jose -> nothing.",
+  "findings": [
+    { "source": "ast", "ruleId": "jose/es256", "severity": "high", "file": "generatekeypair.mjs" },
+    { "source": "ast", "ruleId": "jose/eddsa", "severity": "high", "file": "generatekeypair.mjs" },
+    { "source": "ast", "ruleId": "jose/ml-dsa-65", "severity": "safe", "file": "generatekeypair.mjs" },
+
+    { "source": "ast", "ruleId": "jose/rs256", "severity": "high", "file": "signjwt-builder.mjs" },
+    { "source": "ast", "ruleId": "jose/ml-dsa-65", "severity": "safe", "file": "signjwt-builder.mjs" },
+
+    { "source": "ast", "ruleId": "jose/es384", "severity": "high", "file": "namespace-builder.mjs" },
+
+    { "source": "ast", "ruleId": "jose/ml-dsa-65", "severity": "safe", "file": "only-mldsa.mjs" },
+
+    { "source": "ast", "ruleId": "jose/review", "severity": "review", "file": "unresolved.mjs" }
+  ]
+}

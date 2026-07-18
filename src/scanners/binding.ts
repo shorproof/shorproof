@@ -1,4 +1,4 @@
-import type { Binding, NodePath } from '@babel/traverse';
+import type { Binding, NodePath, Scope } from '@babel/traverse';
 import type * as t from '@babel/types';
 
 /**
@@ -58,8 +58,16 @@ function importedNameFromObjectPattern(pattern: t.ObjectPattern, localName: stri
   return null;
 }
 
-/** Classify what module (if any) a binding refers to. */
-function classifyBinding(binding: Binding): ResolvedBinding | null {
+/** Max binding hops to follow (`const c2 = c; const c3 = c2; …`) before giving up — cycle/blowup guard. */
+const MAX_BINDING_DEPTH = 8;
+
+/**
+ * Classify what module (if any) a binding refers to, following simple
+ * re-bindings up to a depth limit. Recursion resolves method extraction
+ * (`const g = c.foo`) and namespace aliasing (`const c2 = c`).
+ */
+function classifyBinding(binding: Binding, depth = 0): ResolvedBinding | null {
+  if (depth > MAX_BINDING_DEPTH) return null;
   const node = binding.path.node;
 
   // ESM: import D from 'm'  /  import * as N from 'm'
@@ -79,27 +87,58 @@ function classifyBinding(binding: Binding): ResolvedBinding | null {
     return { module: decl.source.value, kind: 'named', name };
   }
 
-  // CJS / dynamic: const … = require('m') | await import('m') | require('m').foo
   if (node.type === 'VariableDeclarator' && node.init) {
-    const { init, id } = node;
-
-    // const foo = require('m').foo
-    if (init.type === 'MemberExpression' && !init.computed && init.property.type === 'Identifier') {
-      const mod = moduleFromRequireLike(init.object);
-      if (mod) return { module: mod, kind: 'named', name: init.property.name };
-    }
-
-    const mod = moduleFromRequireLike(init);
-    if (mod) {
-      if (id.type === 'Identifier') return { module: mod, kind: 'namespace' };
-      if (id.type === 'ObjectPattern') {
-        const name = importedNameFromObjectPattern(id, binding.identifier.name);
-        if (name) return { module: mod, kind: 'named', name };
-      }
-    }
+    return classifyDeclarator(binding, node, depth);
   }
 
   return null;
+}
+
+/** Classify `const … = <init>` initializers: require/import, member access, or a plain alias. */
+function classifyDeclarator(
+  binding: Binding,
+  node: t.VariableDeclarator,
+  depth: number,
+): ResolvedBinding | null {
+  const init = node.init;
+  if (!init) return null;
+
+  // const x = require('m') | await import('m')  — whole module or destructured
+  const mod = moduleFromRequireLike(init);
+  if (mod) {
+    if (node.id.type === 'Identifier') return { module: mod, kind: 'namespace' };
+    if (node.id.type === 'ObjectPattern') {
+      const name = importedNameFromObjectPattern(node.id, binding.identifier.name);
+      if (name) return { module: mod, kind: 'named', name };
+    }
+    return null;
+  }
+
+  // const foo = <expr>.prop  — require('m').foo, or member access on a namespace binding
+  if (init.type === 'MemberExpression') {
+    const propName = memberName(init);
+    if (propName === null) return null;
+    const reqMod = moduleFromRequireLike(init.object);
+    if (reqMod) return { module: reqMod, kind: 'named', name: propName };
+    if (init.object.type === 'Identifier') {
+      const obj = resolveBindingName(binding, init.object.name, depth);
+      if (obj?.kind === 'namespace') return { module: obj.module, kind: 'named', name: propName };
+    }
+    return null;
+  }
+
+  // const c2 = c  — a plain re-binding of another identifier
+  if (init.type === 'Identifier') {
+    return resolveBindingName(binding, init.name, depth);
+  }
+
+  return null;
+}
+
+/** Resolve an identifier referenced inside a declarator, from that declarator's own scope. */
+function resolveBindingName(binding: Binding, name: string, depth: number): ResolvedBinding | null {
+  const ref = binding.path.scope.getBinding(name);
+  return ref ? classifyBinding(ref, depth + 1) : null;
 }
 
 /**
@@ -109,10 +148,18 @@ function classifyBinding(binding: Binding): ResolvedBinding | null {
  * (`ns.foo(...)`). Uses scope, so a local shadow is correctly not the module.
  */
 export function resolveCallTarget(path: NodePath<t.CallExpression>): CallTarget | null {
-  const { callee } = path.node;
+  return resolveCallee(path.scope, path.node.callee);
+}
 
+/**
+ * Resolve a call or construct callee to the module export it names, or null.
+ * Handles `foo(...)` / `new Foo(...)` (a named binding) and `ns.foo(...)` /
+ * `new ns.Foo(...)` (a member on a namespace binding). Shared by the call and
+ * the jose-builder analyzers.
+ */
+export function resolveCallee(scope: Scope, callee: t.Node): CallTarget | null {
   if (callee.type === 'Identifier') {
-    const resolved = resolveIdentifier(path, callee.name);
+    const resolved = resolveName(scope, callee.name);
     return resolved?.kind === 'named'
       ? { module: resolved.module, exportName: resolved.name }
       : null;
@@ -121,7 +168,7 @@ export function resolveCallTarget(path: NodePath<t.CallExpression>): CallTarget 
   if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
     const exportName = memberName(callee);
     if (exportName === null) return null;
-    const resolved = resolveIdentifier(path, callee.object.name);
+    const resolved = resolveName(scope, callee.object.name);
     return resolved?.kind === 'namespace'
       ? { module: resolved.module, exportName }
       : null;
@@ -142,7 +189,7 @@ function memberName(member: t.MemberExpression): string | null {
   return null;
 }
 
-function resolveIdentifier(path: NodePath<t.CallExpression>, name: string): ResolvedBinding | null {
-  const binding = path.scope.getBinding(name);
+function resolveName(scope: Scope, name: string): ResolvedBinding | null {
+  const binding = scope.getBinding(name);
   return binding ? classifyBinding(binding) : null;
 }

@@ -1,0 +1,8 @@
+{
+  "description": "express-jwt config detection: a vulnerable alg in the accepted `algorithms` list -> high; HS256 -> safe; the array resolved through a const; no algorithms key -> nothing.",
+  "findings": [
+    { "source": "ast", "ruleId": "express-jwt/rs256", "severity": "high", "file": "config.mjs" },
+    { "source": "ast", "ruleId": "express-jwt/hs256", "severity": "safe", "file": "config.mjs" },
+    { "source": "ast", "ruleId": "express-jwt/es384", "severity": "high", "file": "config.mjs" }
+  ]
+}

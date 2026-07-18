@@ -88,3 +88,25 @@ describe('binding layer keeps the imported export name across renames', () => {
     expect(targets(code)).toEqual([]);
   });
 });
+
+describe('binding layer follows re-bindings recursively', () => {
+  it('method extraction: const g = c.foo; g() resolves the export', () => {
+    const code = `import * as c from 'node:crypto'; const g = c.generateKeyPairSync; g('rsa');`;
+    expect(targets(code)).toContainEqual(GEN);
+  });
+
+  it('namespace aliasing: const c2 = c; c2.foo() resolves the export', () => {
+    const code = `import * as c from 'node:crypto'; const c2 = c; c2.generateKeyPairSync('rsa');`;
+    expect(targets(code)).toContainEqual(GEN);
+  });
+
+  it('a multi-hop alias chain resolves', () => {
+    const code = `const a = require('node:crypto'); const b = a; const d = b; d.generateKeyPairSync('rsa');`;
+    expect(targets(code)).toContainEqual(GEN);
+  });
+
+  it('a circular alias terminates and resolves to nothing', () => {
+    const code = `let x = y; let y = x; x.generateKeyPairSync('rsa');`;
+    expect(targets(code)).toEqual([]);
+  });
+});
