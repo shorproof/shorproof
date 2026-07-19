@@ -8,6 +8,10 @@
 [![license](https://img.shields.io/npm/l/shorproof.svg)](./LICENSE)
 [![dependencies](https://img.shields.io/badge/runtime%20deps-2-brightgreen.svg)](./package.json)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shorproof/shorproof/main/.github/shorproof-demo.gif" alt="shorproof scanning a Node.js project — finds RS256 JWTs and JWKS RSA keys, confirms ML-DSA usage as post-quantum safe" width="800">
+</p>
+
 `shorproof` finds the **quantum-vulnerable cryptography** in your project — the RSA, ECDSA, ECDH and elliptic-curve usage that [Shor's algorithm](https://en.wikipedia.org/wiki/Shor%27s_algorithm) breaks once large-scale quantum computers arrive — and points you to the NIST post-quantum replacements (ML-KEM / FIPS 203, ML-DSA / FIPS 204).
 
 It scans **source code, dependencies, JWT/JWKS, and PEM/X.509 key material**, and reports findings as text, JSON, **SARIF** (GitHub code scanning) or a **CycloneDX 1.6 CBOM**.
@@ -97,6 +101,22 @@ jobs:
         with:
           sarif_file: shorproof.sarif
 ```
+
+## Using shorproof with AI coding agents
+
+shorproof is built to be driven by an AI coding agent (Claude Code, Cursor, Copilot, Aider, …), not just a human at a terminal. When you ask your agent something like *"check this project for quantum-vulnerable crypto"*, it can run one command and parse a stable, machine-readable result — no plugin, no API key, no config.
+
+```bash
+npx shorproof . --json
+```
+
+The `--json` output is a **documented, stable schema** (see [JSON schema](#json-schema)) — an agent can read `summary` for a verdict, walk `findings` for each `severity` / `file` / `line` / `why` / `migration`, and check `skipped` for anything it couldn't analyze. For CI-style gating an agent can rely on the exit code (`--fail-on high` → exit `1`).
+
+A prompt that works well:
+
+> Run `npx shorproof . --json`, then summarize the quantum-vulnerable crypto by severity. For each `high`/`critical` finding, show the file:line and the `migration` hint. Don't touch anything marked `safe` — that's already post-quantum.
+
+Because detection is **binding-aware and usage-confirmed**, the agent gets signal, not noise: importing a JWT library isn't a finding, `ML-DSA` usage comes back `safe`, and a stray `"RS256"` in a comment is ignored. That keeps the agent from "fixing" things that aren't broken. A one-page machine-readable capability summary also lives at [`llms.txt`](./llms.txt).
 
 ## Severity philosophy (the honest part)
 
