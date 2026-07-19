@@ -2,15 +2,15 @@
 
 > Is your code **Shor-proof**? A post-quantum readiness scanner for JavaScript & TypeScript.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/shorproof/shorproof/main/assets/demo.gif" alt="shorproof scanning a project: it flags RSA/RS256/ES256 as quantum-vulnerable and reports ML-DSA-65 usage as already post-quantum ✓" width="760">
-</p>
-
 [![npm version](https://img.shields.io/npm/v/shorproof.svg)](https://www.npmjs.com/package/shorproof)
 [![CI](https://github.com/shorproof/shorproof/actions/workflows/ci.yml/badge.svg)](https://github.com/shorproof/shorproof/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/shorproof.svg)](https://www.npmjs.com/package/shorproof)
 [![license](https://img.shields.io/npm/l/shorproof.svg)](./LICENSE)
 [![dependencies](https://img.shields.io/badge/runtime%20deps-2-brightgreen.svg)](./package.json)
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shorproof/shorproof/main/.github/shorproof-demo.gif" alt="shorproof scanning a Node.js project — finds RS256 JWTs and JWKS RSA keys, confirms ML-DSA usage as post-quantum safe" width="800">
+</p>
 
 `shorproof` finds the **quantum-vulnerable cryptography** in your project — the RSA, ECDSA, ECDH and elliptic-curve usage that [Shor's algorithm](https://en.wikipedia.org/wiki/Shor%27s_algorithm) breaks once large-scale quantum computers arrive — and points you to the NIST post-quantum replacements (ML-KEM / FIPS 203, ML-DSA / FIPS 204).
 
