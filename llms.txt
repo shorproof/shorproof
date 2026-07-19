@@ -1,0 +1,47 @@
+# shorproof
+
+> A post-quantum readiness scanner for JavaScript & TypeScript. It finds Shor-breakable cryptography (RSA, ECDSA/ECDH, classical Diffie-Hellman) in source code, dependencies, JWT/JWKS, and PEM/X.509 key material, and reports it with concrete migration guidance toward the NIST PQC standards (ML-KEM / FIPS 203, ML-DSA / FIPS 204). It runs with no install via `npx shorproof` and emits machine-readable output (JSON, SARIF 2.1.0, CycloneDX 1.6 CBOM).
+
+shorproof is auth/JWT/enterprise-first and built for correctness: detection is binding-aware (it tracks the resolved import, not a variable named `jwt`) and usage-confirmed (importing a crypto library is not, by itself, a finding). It positively reports post-quantum usage — ML-KEM / ML-DSA / SLH-DSA come back `safe` ("already post-quantum ✓"). No fear-mongering, no false positives by design; every finding's rationale is written to survive review by a cryptographer. It has exactly two runtime dependencies (`@babel/parser`, `@babel/traverse`) and requires Node.js >= 20.12.
+
+## Run it
+
+- `npx shorproof` — scan the current project (text report).
+- `npx shorproof ./path` — scan a specific directory.
+- `npx shorproof . --json` — stable, documented JSON (best for programmatic/agent use).
+- `npx shorproof . --format sarif` — SARIF 2.1.0 for GitHub code scanning.
+- `npx shorproof . --format cbom` — CycloneDX 1.6 Cryptographic Bill of Materials.
+- `npx shorproof . --fail-on high` — exit `1` on any finding at/above `high` (`--strict` = `--fail-on high`).
+
+## Exit codes
+
+- `0` — clean, or findings reported without a `--fail-on`/`--strict` threshold.
+- `1` — a finding at or above the `--fail-on` severity.
+- `2` — usage or I/O error (bad directory, unknown `--format`/`--fail-on`).
+
+## JSON output (stable schema)
+
+Top-level: `tool`, `version`, `root`, `scanners`, `summary` (counts per severity), `findings[]`, `skipped[]`.
+Each finding: `source` (`deps`|`ast`|`artifact`), `ruleId`, `severity` (`critical`|`high`|`medium`|`review`|`safe`|`info`), `category` (`signature`|`kem`|`key-exchange`|`hash`|`symmetric`|`artifact`), `algorithm`, `title`, `why`, `migration`, `confidence` (`high`|`medium`|`low`), `lifetimeSensitive`, `location` (`file`, `line`, `column`).
+`skipped[]`: files that could not be analyzed (`file`, `reason`) — surfaced, never silently dropped.
+
+## What it scans
+
+- Dependencies (`deps`): `package.json` against a curated knowledge base of crypto packages.
+- Source (`ast`): Babel AST, binding-aware. Node `crypto` (sign/verify, `generateKeyPair`, `createECDH`, Diffie-Hellman, `publicEncrypt`/`privateDecrypt`), WebCrypto `crypto.subtle.*` (RSA/ECDSA/ECDH/Ed25519), and the JWT stack (`jsonwebtoken`, `jose` including the `SignJWT` builder, `express-jwt`). Algorithm options are resolved by best-effort constant propagation. `ML-DSA-44/65/87` is recognized as post-quantum (`safe`).
+- Artifacts (`artifacts`): JWKS/JWK (`kty: RSA|EC` → finding; `kty: AKP` → safe, RFC 9964), PEM private/public keys, and X.509 certificates (parsed natively with `node:crypto`; certs valid past ~2030 are elevated).
+
+## Severity model (harvest-now-decrypt-later / lifetime based)
+
+- `critical` — Shor-breakable crypto protecting long-lived secrets/signatures (stored-data encryption, certs valid past 2030, JWKS keys, private-key files).
+- `high` — Shor-breakable usage with typical exposure (JWT signing with RS/ES/EdDSA, TLS-adjacent key material). The RSA family stays here.
+- `medium` — quantum-weakened but manageable (AES-128 via Grover → use AES-256), or classically weak already (MD5/SHA-1). Bare elliptic-curve key generation lands here.
+- `review` — a crypto-capable surface whose usage could not be confirmed statically.
+- `safe` — AES-256, SHA-256/SHA-3, bcrypt/argon2, and ML-KEM/ML-DSA/SLH-DSA. SHA-256 is never flagged as a risk; symmetric crypto is never implied to be Shor-broken.
+
+## Links
+
+- npm: https://www.npmjs.com/package/shorproof
+- Repository: https://github.com/shorproof/shorproof
+- Changelog: https://github.com/shorproof/shorproof/blob/main/CHANGELOG.md
+- License: MIT

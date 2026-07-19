@@ -2,6 +2,10 @@
 
 > Is your code **Shor-proof**? A post-quantum readiness scanner for JavaScript & TypeScript.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shorproof/shorproof/main/assets/demo.gif" alt="shorproof scanning a project: it flags RSA/RS256/ES256 as quantum-vulnerable and reports ML-DSA-65 usage as already post-quantum ✓" width="760">
+</p>
+
 [![npm version](https://img.shields.io/npm/v/shorproof.svg)](https://www.npmjs.com/package/shorproof)
 [![CI](https://github.com/shorproof/shorproof/actions/workflows/ci.yml/badge.svg)](https://github.com/shorproof/shorproof/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/shorproof.svg)](https://www.npmjs.com/package/shorproof)
@@ -97,6 +101,22 @@ jobs:
         with:
           sarif_file: shorproof.sarif
 ```
+
+## Using shorproof with AI coding agents
+
+shorproof is built to be driven by an AI coding agent (Claude Code, Cursor, Copilot, Aider, …), not just a human at a terminal. When you ask your agent something like *"check this project for quantum-vulnerable crypto"*, it can run one command and parse a stable, machine-readable result — no plugin, no API key, no config.
+
+```bash
+npx shorproof . --json
+```
+
+The `--json` output is a **documented, stable schema** (see [JSON schema](#json-schema)) — an agent can read `summary` for a verdict, walk `findings` for each `severity` / `file` / `line` / `why` / `migration`, and check `skipped` for anything it couldn't analyze. For CI-style gating an agent can rely on the exit code (`--fail-on high` → exit `1`).
+
+A prompt that works well:
+
+> Run `npx shorproof . --json`, then summarize the quantum-vulnerable crypto by severity. For each `high`/`critical` finding, show the file:line and the `migration` hint. Don't touch anything marked `safe` — that's already post-quantum.
+
+Because detection is **binding-aware and usage-confirmed**, the agent gets signal, not noise: importing a JWT library isn't a finding, `ML-DSA` usage comes back `safe`, and a stray `"RS256"` in a comment is ignored. That keeps the agent from "fixing" things that aren't broken. A one-page machine-readable capability summary also lives at [`llms.txt`](./llms.txt).
 
 ## Severity philosophy (the honest part)
 
