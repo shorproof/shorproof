@@ -41,6 +41,11 @@ promise.
   `1` threshold met, `2` usage/IO error.
 - **Positive detection**: ML-KEM/ML-DSA/SLH-DSA usage is reported as `safe`
   ("already post-quantum ✓"), not silently ignored.
+- **Resilient scanning**: a file that can't be parsed, or whose AST traversal
+  throws (e.g. a duplicate declaration in a vendored/concatenated bundle), is
+  recorded in `skipped` and surfaced (text footer + JSON `skipped` array) — never
+  silently dropped, and never aborting the scan. One un-analyzable file can't hide
+  its neighbours' findings. SARIF `tool.driver.semanticVersion` is populated.
 - Fixture-based precision **and** recall test suite, including a dedicated
   false-positive suite (safe-usage, comment/string, shadowing, non-tracked libs).
 

@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import type { Finding, Scanner, ScanResult, Severity, SeverityCounts } from './types.ts';
+import type { Finding, Scanner, ScanResult, Severity, SeverityCounts, SkippedFile } from './types.ts';
 import { SEVERITIES, SEVERITY_RANK } from './types.ts';
 import { depsScanner } from './scanners/deps.ts';
 import { astScanner } from './scanners/ast.ts';
@@ -46,12 +46,15 @@ export async function scan(options: ScanOptions): Promise<ScanResult> {
   const scanners = options.scanners ?? DEFAULT_SCANNERS;
 
   const findings: Finding[] = [];
+  const skipped: SkippedFile[] = [];
   for (const scanner of scanners) {
-    const produced = await scanner.scan({ root });
-    findings.push(...produced);
+    const report = await scanner.scan({ root });
+    findings.push(...report.findings);
+    if (report.skipped) skipped.push(...report.skipped);
   }
 
   findings.sort(compareFindings);
+  skipped.sort((a, b) => a.file.localeCompare(b.file));
 
   const counts = emptyCounts();
   for (const finding of findings) counts[finding.severity]++;
@@ -63,5 +66,6 @@ export async function scan(options: ScanOptions): Promise<ScanResult> {
     findings,
     counts,
     scanners: scanners.map((s) => s.name),
+    skipped,
   };
 }

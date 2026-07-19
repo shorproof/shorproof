@@ -75,6 +75,7 @@ export function renderText(result: ScanResult, options: TextReportOptions): stri
   if (result.findings.length === 0) {
     out.push(paint('green', 'No quantum-vulnerable cryptography found.'));
     out.push('');
+    appendSkipped(out, result, paint);
     return out.join('\n');
   }
 
@@ -94,9 +95,30 @@ export function renderText(result: ScanResult, options: TextReportOptions): stri
     }
   }
 
+  appendSkipped(out, result, paint);
   out.push(`  ${summaryLine(result, paint)}`);
   out.push('');
   return out.join('\n');
+}
+
+/**
+ * Footer listing files that could not be analyzed. Surfaced, never swallowed: a
+ * silent skip is a blind spot, and this must show even when there are zero
+ * findings (a skipped file could be the one that mattered).
+ */
+function appendSkipped(
+  out: string[],
+  result: ScanResult,
+  paint: ReturnType<typeof makePaint>,
+): void {
+  if (result.skipped.length === 0) return;
+  const n = result.skipped.length;
+  out.push(`  ${paint('yellow', `⚠ ${n} file${n === 1 ? '' : 's'} could not be analyzed`)}`);
+  for (const s of result.skipped) {
+    const file = relative(result.root, s.file) || s.file;
+    out.push(`      ${paint('dim', `${file} — ${s.reason}`)}`);
+  }
+  out.push('');
 }
 
 function summaryLine(result: ScanResult, paint: ReturnType<typeof makePaint>): string {

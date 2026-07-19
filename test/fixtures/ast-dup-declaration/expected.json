@@ -1,0 +1,6 @@
+{
+  "description": "Regression for the traverse-crash blocker: dup.js has a duplicate `const x` that makes Babel's scope builder throw during traversal. That file must be skipped (not crash the scan), and the real RS256 signing in the sibling vuln.js must still be reported. A single un-analyzable file must never hide its neighbours' findings.",
+  "findings": [
+    { "source": "ast", "ruleId": "jsonwebtoken/rs256", "severity": "high", "file": "vuln.js" }
+  ]
+}

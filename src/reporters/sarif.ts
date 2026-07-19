@@ -141,6 +141,7 @@ export function renderSarif(result: ScanResult): string {
             name: 'shorproof',
             informationUri: INFORMATION_URI,
             version: result.version,
+            semanticVersion: result.version,
             rules,
           },
         },

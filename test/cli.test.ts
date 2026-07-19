@@ -20,6 +20,7 @@ const TSC = fileURLToPath(new URL('../node_modules/typescript/lib/tsc.js', impor
 const DEPS_BASIC = fileURLToPath(new URL('./fixtures/deps-basic', import.meta.url));
 const DEPS_CLEAN = fileURLToPath(new URL('./fixtures/deps-clean', import.meta.url));
 const ARTIFACTS_X509 = fileURLToPath(new URL('./fixtures/artifacts-x509', import.meta.url));
+const DUP_DECL = fileURLToPath(new URL('./fixtures/ast-dup-declaration', import.meta.url));
 
 interface CliRun {
   status: number;
@@ -77,6 +78,15 @@ describe('CLI exit codes', () => {
     const run = runCli([DEPS_BASIC, '--fail-on', 'bogus']);
     expect(run.status).toBe(2);
     expect(run.stderr).toContain('unknown --fail-on');
+  });
+
+  it('survives an un-analyzable file: exits 0, still reports neighbours, notes the skip', () => {
+    // dup.js makes Babel's scope builder throw; vuln.js has a real RS256 usage.
+    const run = runCli([DUP_DECL, '--no-color']);
+    expect(run.status).toBe(0); // not 2 — one bad file must not abort the scan
+    expect(run.stdout).toContain('RS256'); // the neighbour's finding survives
+    expect(run.stdout).toContain('could not be analyzed'); // the skip is surfaced, not swallowed
+    expect(run.stdout).toContain('dup.js');
   });
 
   it('exits 2 on a non-existent directory', () => {

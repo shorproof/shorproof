@@ -6,6 +6,7 @@ import { SEVERITIES } from '../src/types.ts';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/deps-basic', import.meta.url));
 const ARTIFACTS = fileURLToPath(new URL('./fixtures/artifacts-jwks', import.meta.url));
+const DUP_DECL = fileURLToPath(new URL('./fixtures/ast-dup-declaration', import.meta.url));
 
 /** True if the string contains an ANSI SGR escape sequence (ESC + '['). */
 const hasAnsi = (s: string): boolean => s.includes(`${String.fromCharCode(27)}[`);
@@ -39,6 +40,35 @@ describe('json reporter', () => {
   });
 });
 
+describe('skipped-file reporting', () => {
+  it('records un-analyzable files in the result and surfaces them in json + text', async () => {
+    const result = await scan({ root: DUP_DECL });
+
+    // The neighbour's finding survived, and the bad file is tracked, not swallowed.
+    expect(result.findings.some((f) => f.ruleId === 'jsonwebtoken/rs256')).toBe(true);
+    expect(result.skipped.length).toBe(1);
+    expect(result.skipped[0]!.file).toContain('dup.js');
+    expect(result.skipped[0]!.reason).toMatch(/Duplicate declaration/);
+
+    // JSON exposes it as a stable array.
+    const doc = JSON.parse(renderJson(result)) as { skipped: Array<{ file: string; reason: string }> };
+    expect(doc.skipped.length).toBe(1);
+    expect(doc.skipped[0]!.file).toContain('dup.js');
+
+    // Text surfaces it in a footer.
+    const text = renderText(result, { color: false });
+    expect(text).toContain('could not be analyzed');
+    expect(text).toContain('dup.js');
+  });
+
+  it('a clean scan reports an empty skipped array', async () => {
+    const result = await scan({ root: FIXTURE });
+    expect(result.skipped).toEqual([]);
+    const doc = JSON.parse(renderJson(result)) as { skipped: unknown[] };
+    expect(doc.skipped).toEqual([]);
+  });
+});
+
 describe('sarif reporter', () => {
   it('emits valid SARIF 2.1.0 with deduped rules and correct level mapping', async () => {
     const result = await scan({ root: ARTIFACTS });
@@ -46,7 +76,14 @@ describe('sarif reporter', () => {
       version: string;
       $schema: string;
       runs: Array<{
-        tool: { driver: { name: string; version: string; rules: Array<Record<string, unknown>> } };
+        tool: {
+          driver: {
+            name: string;
+            version: string;
+            semanticVersion: string;
+            rules: Array<Record<string, unknown>>;
+          };
+        };
         results: Array<{
           ruleId: string;
           ruleIndex: number;
@@ -61,6 +98,8 @@ describe('sarif reporter', () => {
     expect(doc.$schema).toContain('sarif-2.1.0');
     const run = doc.runs[0]!;
     expect(run.tool.driver.name).toBe('shorproof');
+    expect(run.tool.driver.semanticVersion).toBe(run.tool.driver.version);
+    expect(run.tool.driver.semanticVersion.length).toBeGreaterThan(0);
 
     // one result per finding
     expect(run.results.length).toBe(result.findings.length);

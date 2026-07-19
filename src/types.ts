@@ -209,11 +209,30 @@ export interface ScanContext {
   readonly root: string;
 }
 
+/**
+ * A file a scanner could not analyze (e.g. an unparseable source file, or one
+ * whose AST traversal threw). Reported explicitly rather than skipped silently:
+ * a hidden skip is a blind spot, and a single such file must never mask the
+ * findings in its neighbours.
+ */
+export interface SkippedFile {
+  /** Absolute or repo-relative path of the file that was skipped. */
+  readonly file: string;
+  /** Short human reason, e.g. "parse error" or "analysis error: Duplicate declaration". */
+  readonly reason: string;
+}
+
+/** What a scanner returns: its findings, plus any files it could not analyze. */
+export interface ScanReport {
+  readonly findings: readonly Finding[];
+  readonly skipped?: readonly SkippedFile[];
+}
+
 /** A pluggable scanner. The engine runs each registered scanner and merges output. */
 export interface Scanner {
   /** Stable identifier, e.g. "deps". Used in diagnostics and `--scanner` filtering. */
   readonly name: string;
-  scan(ctx: ScanContext): Promise<Finding[]> | Finding[];
+  scan(ctx: ScanContext): Promise<ScanReport> | ScanReport;
 }
 
 /** Aggregate counts by severity for summaries and exit-code decisions. */
@@ -228,4 +247,6 @@ export interface ScanResult {
   readonly counts: SeverityCounts;
   /** Names of the scanners that ran. */
   readonly scanners: readonly string[];
+  /** Files that could not be analyzed, across all scanners. Empty when none. */
+  readonly skipped: readonly SkippedFile[];
 }

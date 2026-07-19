@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { NodePath, Scope } from '@babel/traverse';
+import type { ParseResult } from '@babel/parser';
 import type * as t from '@babel/types';
 import type {
   AlgOutcome,
@@ -10,7 +11,9 @@ import type {
   JwtCallRule,
   Scanner,
   ScanContext,
+  ScanReport,
   Severity,
+  SkippedFile,
 } from '../types.ts';
 import {
   NODE_CRYPTO_RULES,
@@ -431,14 +434,8 @@ function analyzeWebCrypto(
 
 // --- scanner ------------------------------------------------------------
 
-/**
- * Scan one source string. Exposed (beyond the Scanner) so tests can exercise the
- * binding layer + rule matching on a snippet without touching the filesystem.
- */
-export function scanSource(file: string, source: string): AstFinding[] {
-  const ast = parseSource(source, file);
-  if (!ast) return [];
-
+/** Traverse a parsed AST and collect findings. May throw if Babel's scope builder rejects the tree. */
+function analyzeAst(ast: ParseResult<t.File>, file: string, source: string): AstFinding[] {
   const findings: AstFinding[] = [];
   traverse(ast, {
     CallExpression(path: NodePath<t.CallExpression>) {
@@ -457,14 +454,32 @@ export function scanSource(file: string, source: string): AstFinding[] {
 }
 
 /**
+ * Scan one source string. Exposed (beyond the Scanner) so tests can exercise the
+ * binding layer + rule matching on a snippet without touching the filesystem.
+ * Returns no findings for an unparseable snippet; may throw if traversal does.
+ */
+export function scanSource(file: string, source: string): AstFinding[] {
+  const ast = parseSource(source, file);
+  if (!ast) return [];
+  return analyzeAst(ast, file, source);
+}
+
+/**
  * The AST source scanner. Walks source files under the root, parses each with
  * Babel, and reports confirmed quantum-vulnerable call sites. A crypto import
  * alone is never a finding — only a confirmed vulnerable *usage* is.
+ *
+ * A file that cannot be parsed, or whose traversal throws (e.g. Babel's scope
+ * builder rejecting a duplicate declaration in a vendored/concatenated file), is
+ * recorded in `skipped` and does not abort the scan — one bad file must never
+ * hide the findings in the rest of the tree, and the skip is reported, not
+ * swallowed.
  */
 export const astScanner: Scanner = {
   name: 'ast',
-  scan({ root }: ScanContext): AstFinding[] {
+  scan({ root }: ScanContext): ScanReport {
     const findings: AstFinding[] = [];
+    const skipped: SkippedFile[] = [];
     for (const file of walkFiles(root, { extensions: SOURCE_EXTENSIONS })) {
       let source: string;
       try {
@@ -472,8 +487,18 @@ export const astScanner: Scanner = {
       } catch {
         continue; // unreadable file — skip, don't abort the scan
       }
-      findings.push(...scanSource(file, source));
+
+      const ast = parseSource(source, file);
+      if (!ast) {
+        skipped.push({ file, reason: 'parse error' });
+        continue;
+      }
+      try {
+        findings.push(...analyzeAst(ast, file, source));
+      } catch (err) {
+        skipped.push({ file, reason: `analysis error: ${(err as Error).message}` });
+      }
     }
-    return findings;
+    return { findings, skipped };
   },
 };
