@@ -12,7 +12,7 @@ import {
   artifactSeverity,
   jwkKeyType,
 } from '../rules/artifacts.ts';
-import type { ArtifactFinding, Scanner, ScanContext } from '../types.ts';
+import type { ArtifactFinding, Scanner, ScanContext, ScanReport } from '../types.ts';
 import { walkFiles } from '../walk.ts';
 
 /**
@@ -342,7 +342,7 @@ const PEM_EXTS = new Set(['.pem', '.crt', '.cer', '.key', '.pub']);
 
 export const artifactsScanner: Scanner = {
   name: 'artifacts',
-  scan({ root }: ScanContext): ArtifactFinding[] {
+  scan({ root }: ScanContext): ScanReport {
     const files = walkFiles(root, { extensions: [...ARTIFACT_EXTENSIONS] });
     const findings: ArtifactFinding[] = [];
 
@@ -365,7 +365,7 @@ export const artifactsScanner: Scanner = {
       }
     }
 
-    return findings;
+    return { findings };
   },
 };
 

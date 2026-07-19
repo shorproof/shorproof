@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DepFinding, DepRule, Scanner, ScanContext } from '../types.ts';
+import type { DepFinding, DepRule, Scanner, ScanContext, ScanReport } from '../types.ts';
 import { DEP_RULES } from '../rules/index.ts';
 
 /** Package name -> rule, built once. */
@@ -41,14 +41,14 @@ function collectDependencies(pkg: Manifest): Map<string, string> {
  */
 export const depsScanner: Scanner = {
   name: 'deps',
-  scan({ root }: ScanContext): DepFinding[] {
+  scan({ root }: ScanContext): ScanReport {
     const pkgPath = join(root, 'package.json');
 
     let raw: string;
     try {
       raw = readFileSync(pkgPath, 'utf8');
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { findings: [] };
       throw new Error(`shorproof: could not read ${pkgPath}`, { cause: err });
     }
 
@@ -82,6 +82,6 @@ export const depsScanner: Scanner = {
       });
     }
 
-    return findings;
+    return { findings };
   },
 };

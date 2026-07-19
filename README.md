@@ -139,9 +139,14 @@ SHA-256 is never flagged as a risk, and symmetric crypto is never implied to be 
       "location": { "file": "src/auth.ts", "line": 12, "column": 3 }
       // source-specific: deps → package,range | ast → snippet | artifact → detail
     }
-  ]
+  ],
+  // Files that could not be analyzed — unparseable, or a traversal error.
+  // Reported, never silently dropped; empty array when none.
+  "skipped": [{ "file": "vendor/bundle.js", "reason": "analysis error: Duplicate declaration \"x\"" }]
 }
 ```
+
+A file that can't be parsed, or whose AST traversal throws (e.g. a duplicate declaration in a vendored or concatenated bundle), is recorded in `skipped` and surfaced — in the text footer and this JSON array — **never silently dropped, and never aborting the scan.** One un-analyzable file must not hide the findings in the rest of the tree.
 
 ## Exit codes
 

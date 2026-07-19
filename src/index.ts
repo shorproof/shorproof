@@ -22,6 +22,8 @@ export type {
   Location,
   Scanner,
   ScanContext,
+  ScanReport,
   ScanResult,
+  SkippedFile,
   SeverityCounts,
 } from './types.ts';

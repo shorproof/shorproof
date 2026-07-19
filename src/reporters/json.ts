@@ -16,6 +16,9 @@ export function renderJson(result: ScanResult): string {
     scanners: result.scanners,
     summary: result.counts,
     findings: result.findings,
+    // Files that could not be analyzed (unparseable or traversal error).
+    // Always present so consumers can surface the blind spot; empty when none.
+    skipped: result.skipped,
   };
   return JSON.stringify(doc, null, 2);
 }
