@@ -102,6 +102,6 @@ describe('CLI exit codes', () => {
     expect(run.status).toBe(0);
     const doc = JSON.parse(run.stdout) as { tool: string; version: string };
     expect(doc.tool).toBe('shorproof');
-    expect(doc.version).toBe('0.1.0-dev.0');
+    expect(doc.version).toBe('0.1.0');
   });
 });

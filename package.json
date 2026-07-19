@@ -1,7 +1,7 @@
 {
   "name": "shorproof",
-  "version": "0.1.0-dev.0",
-  "description": "Post-quantum readiness scanner for JavaScript/TypeScript — finds quantum-vulnerable cryptography in your project. Early preview.",
+  "version": "0.1.0",
+  "description": "Post-quantum readiness scanner for JavaScript/TypeScript. Finds Shor-breakable crypto (RSA, ECDSA, ECDH) in source, dependencies, JWT/JWKS and PEM/X.509 artifacts, with honest severities and SARIF + CycloneDX CBOM output. Near-zero dependencies.",
   "type": "module",
   "bin": {
     "shorproof": "dist/cli.js"
@@ -16,6 +16,7 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "engines": {
@@ -28,24 +29,52 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench": "node scripts/bench.mjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
     "post-quantum",
     "pqc",
-    "security",
-    "cryptography",
-    "scanner",
     "quantum-safe",
-    "ml-dsa",
-    "ml-kem",
-    "cbom",
+    "quantum-resistant",
+    "cryptography",
+    "crypto",
+    "security",
+    "scanner",
+    "sast",
+    "static-analysis",
+    "code-scanning",
     "sarif",
-    "audit",
-    "shor"
+    "cbom",
+    "cyclonedx",
+    "nist",
+    "fips-203",
+    "fips-204",
+    "ml-kem",
+    "ml-dsa",
+    "shor",
+    "harvest-now-decrypt-later",
+    "hndl",
+    "crypto-agility",
+    "rsa",
+    "ecdsa",
+    "jwt",
+    "jwks",
+    "jose",
+    "jsonwebtoken",
+    "webcrypto",
+    "audit"
   ],
   "author": "Usama Amjid",
   "license": "MIT",
+  "homepage": "https://github.com/shorproof/shorproof#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shorproof/shorproof.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shorproof/shorproof/issues"
+  },
   "dependencies": {
     "@babel/parser": "^7.28.4",
     "@babel/traverse": "^7.28.4"
